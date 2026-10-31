@@ -1,0 +1,7 @@
+target/
+.env
+arquivos-locais/
+*.log
+erro-backend.txt
+.idea/
+.vscode/

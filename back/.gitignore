@@ -1,0 +1,13 @@
+target/
+*.log
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.factorypath
+.env
+
+# Arquivos enviados no desenvolvimento sem AWS
+arquivos-locais/

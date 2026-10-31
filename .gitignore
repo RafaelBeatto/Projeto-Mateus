@@ -1,0 +1,19 @@
+# Maven / back
+back/target/
+
+# Node / front
+front/node_modules/
+front/dist/
+front/.env
+
+# IDE / OS
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Variáveis da AWS preenchidas (modelo: deploy/aws/apae-aws.env.exemplo)
+deploy/aws/*.env

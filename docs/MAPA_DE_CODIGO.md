@@ -1,0 +1,218 @@
+# Mapa de código
+
+## Visão geral
+
+```
+central-de-secretaria/
+├── back/        API Java 21 · Spring Boot 4.0.7 · Maven (jar)
+├── front/       React 18 · TypeScript · MUI 5 · Redux Toolkit · Vite
+├── docs/        esta documentação
+├── old/         sistema antigo — SÓ LEITURA (especificação funcional)
+└── basefront/   template Modernize — SÓ LEITURA (fonte dos componentes visuais)
+```
+
+Fluxo de uma requisição: tela React → `servicos/<modulo>.ts` → `utils/axios.ts` (JWT, `X-Unidade`, `X-Fuso-Horario`,
+renovação automática) → `/api/...` (proxy do Vite em dev) → Controlador (`@PreAuthorize`) → Serviço (escopo da
+unidade + regras + histórico) → Repositório/Entidade (JPA) → PostgreSQL. Arquivos: `ServicoArquivo` → S3.
+Chat: `@stomp/stompjs` → `/ws` → `ControladorChatWebSocket` → `ServicoChat` → `/user/queue/chat`.
+
+---
+
+## Back — `back/src/main/java/br/org/apae/secretaria/`
+
+| Pacote / arquivo | Responsabilidade |
+|---|---|
+| `CentralSecretariaAplicacao` | `main`; `Locale` pt-BR (mensagens de validação); cache habilitado |
+| **configuracao/** | |
+| `PropriedadesAplicacao` | propriedades `aplicacao.*` (jwt, cors, armazenamento, fuso padrão) |
+| `ConfiguracaoSeguranca` | filtro stateless, rotas públicas, JWT HS256 (encoder/decoder), CORS, BCrypt |
+| `ConfiguracaoWebSocket` | STOMP em `/ws`; autentica no CONNECT; só assina `/user/queue/**` |
+| `ConfiguracaoS3` | `S3Client` e `S3Presigner` (endpoint opcional p/ MinIO) |
+| **comum/** | reaproveitado por todos os módulos |
+| `Limites` | tamanho máximo de cada coluna texto (espelho do SQL e do front) |
+| `Textos` | `limpo()` (trim, vazio→null), `busca()` (null→""), `maiusculo()` |
+| `Transacoes` | `aposConfirmar()` / `aoDesfazer()` (eventos WS, limpeza S3) |
+| `Relogio` | `hoje()` no fuso do navegador (`X-Fuso-Horario`) |
+| `entidade/EntidadeBase`, `EntidadeAuditavel`, `EntidadeCriada` | id IDENTITY, equals por id; `criado_em`/`atualizado_em` automáticos (`EntidadeCriada`: só `criado_em`) |
+| `dominio/Prioridade`, `Frequencia`, `Recorrencia` | enums compartilhados e cálculo de datas repetidas (`proximaDepoisDe` das rotinas, `datasDaSerie` das séries); `Prioridade.pelaProximidade` dá a prioridade de prazos de outros módulos na Agenda |
+| `excecao/*` | `RegraNegocioExcecao`(422), `NaoEncontradoExcecao`(404), `AcessoNegadoExcecao`(403) |
+| `validacao/*` | `@Cpf`, `@Cnpj`, `@SenhaForte`, `DocumentoFiscal` (dígitos e formatação) |
+| `web/TratadorGlobalExcecoes` | ProblemDetail pt-BR; `campos` = erros por campo |
+| `web/Pagina` | formato estável de paginação `{itens, pagina, tamanho, total, totalPaginas}` |
+| **seguranca/** | |
+| `UsuarioAutenticado` | usuário da requisição (Principal, nome = id); `alcanca(caminho)` |
+| `ServicoUsuarioAutenticado` | carrega usuário + permissões efetivas; **cache** `usuarios-autenticados` (`esquecer`, `esquecerTodos`) |
+| `ConversorJwtAutenticacao` | JWT → autenticação; quem deve trocar senha fica sem authorities |
+| `ServicoToken` | emite JWT de acesso; gera token de renovação (guarda SHA-256) |
+| `ContextoSeguranca` | **escopo por unidade**: `unidadeLeitura()`, `unidadeEscrita()`, `exigirLeitura()`, `exigirEscrita()` |
+| **acesso/** | |
+| `autenticacao/` | entrar, renovar (rotação + reuso derruba sessões), sair, eu, trocar senha |
+| `unidade/` | árvore visível, unidade atual (cabeçalho dos PDFs), criar/editar subordinada, dados institucionais |
+| `usuario/` | listar/detalhar/criar/editar/ativar/redefinir senha; `podeGerenciar()` = regra da hierarquia |
+| `cargo/` | cargos fixos (seed) |
+| `permissao/` | `Permissoes` (constantes p/ `@PreAuthorize`), matriz por unidade, ajuste e restauração |
+| **sistema/** | |
+| `arquivo/` | upload S3 (tipos por `CategoriaArquivo`, limite de MB), URL assinada, exclusão pós-commit. Categoria **restrita** (`RELATORIO_PROFISSIONAL`): as rotas genéricas respondem 404 e só o módulo dono abre (`urlTemporariaAutorizada`) |
+| `historico/` | `ServicoHistorico.registrar(...)` (mesma transação), enums `ModuloHistorico`, `AcaoHistorico` |
+| `numeracao/ServicoNumeracao` | `codigo("TAR", unidade)` → `TAR-0001`; `numeroDoAno("Ofício", unidade, ano)` → `001/2026` (upsert atômico) |
+| **chat/** | `ServicoChat` (regras), `ControladorChat` (REST), `ControladorChatWebSocket` (STOMP) |
+| `comum/Relogio`, `comum/Datas` | "hoje" no fuso do navegador (`X-Fuso-Horario`); datas dd/MM/aaaa nas mensagens |
+| **tarefas/** | `Tarefa` (regras de rotina na entidade), `Subtarefa`, `StatusTarefa`, `ServicoTarefa`, `ControladorTarefa` |
+| **agenda/** | `Evento` (regras na entidade), `EventoSerie`, `TipoEvento`, `EscopoSerie`, `ServicoEvento` (CRUD com série), `ServicoAgenda` (itens do período), `ControladorAgenda` |
+| `agenda/fontes/` | `FonteAgenda` (interface: permissão + itens do período), `FonteEventos`, `FonteTarefas`, `FonteDocumentos` (vencimentos), `FonteProjetos` (início/fim de recursos e execuções) |
+| **atendimentos/** | `Aluno`, `Profissional` (cadastros de apoio; `Profissional.usuarioId` liga ao usuário professor/profissional), `Atendimento` (regras na entidade: `marcarPresenca`, `remarcarPara`, `desfazerRemarcacao`, `desligarDoOriginal`; série semanal = `serieId` UUID sem tabela própria), `Presenca`, `MotivoFalta`, `ServicoAtendimento` (CRUD, presença, série, remarcação, cópia da semana), `ServicoCadastroAtendimento` (renomear/mesclar/excluir aluno e profissional, contato família, `meuProfissional` do usuário vinculado), `ControladorAtendimento` |
+| **documentos/** | `Documento` (regra `renovar` na entidade → `DocumentoVersao`), `CategoriaDocumento`, `ExigenciaApae` (documento que vale nos projetos), `ServicoDocumento` (CRUD, renovar, excluir com os arquivos das versões), `ControladorDocumento` |
+| **vinculos/** | `VinculoRegistro`, `TipoRegistro`, `ServicoVinculo`, `ControladorVinculo` (`/api/vinculos`: GET lista, GET /opcoes, POST, DELETE); `dto/Vinculado` |
+| **relatorios/** | `ServicoRelatorio`, `ControladorRelatorio` (`GET /api/relatorios/atividades?de&ate&secoes`, RELATORIO_LER); `dto/RelatorioAtividades` |
+| `relatorios/profissional/` | **Relatórios de professores/profissionais (PDF)**: `RelatorioProfissional`, `StatusRelatorio`, `TipoRelatorio` (PESSOAL/GERAL), `ServicoRelatorioProfissional`, `ControladorRelatorioProfissional` (`/api/relatorios-profissionais`), `dto/` |
+| **pesquisa/** | `ServicoPesquisa` (pontuação sem acento), `ControladorPesquisa` (`GET /api/pesquisa?termo`); `dto/ResultadoPesquisa` |
+| **painel/** | `ServicoPainel`, `ControladorPainel` (`GET /api/painel/extras`: atendimentos sem presença, alunos com faltas seguidas, pendências manuais de execução — vêm de `ServicoAtendimento.semPresenca/alunosComFaltasSeguidas` e `ServicoItensExecucao.pendenciasAbertas`); `dto/ExtrasPainel` |
+| **gerador/** | `ModeloDocumento`, `DocumentoGerado`, `DocumentoGeradoVersao`, `FormatoModelo`, `TipoVinculo`; `SanitizadorHtml` (jsoup); `ServicoModeloDocumento`, `ServicoDocumentoGerado`; `ControladorGerador`; `dto/` |
+| **projetos/** | `Recurso`, `Execucao`, `RecursoDocumento`, `MovimentacaoRecurso`, `ExecucaoEmpresa`, `Cotacao` (+`Cotacao.Item`), `OrdemCompra`, `ExecucaoDocumento`, `Pagamento`, `ExecucaoPendencia`, `Enums`; `CalculoProjetos` (financeiro, checklist, docs da APAE — em lote); `ServicoRecurso`, `ServicoExecucao`, `ServicoItensExecucao`; `ControladorProjeto`; `dto/RequisicoesProjeto`, `dto/RespostasProjeto` |
+| **empresas/** | `Empresa`, `EmpresaDocumento` (arquivo obrigatório), `ServicoEmpresa` (mesmo CNPJ ou razão social = mesma empresa; CNPJ/CPF gravados formatados; lista já com os documentos), `ControladorEmpresa` |
+
+`back/src/main/resources/`: `application.properties` (local) · `db/apae.sql` (schema único + seeds).
+
+### Rotas da API (todas sob `/api`)
+
+| Método e rota | Permissão | Observação |
+|---|---|---|
+| `POST /autenticacao/entrar` · `/renovar` · `/sair` | pública | |
+| `GET /autenticacao/eu` · `PUT /autenticacao/senha` | logado | |
+| `GET /unidades/arvore` · `GET /unidades/atual` | logado | árvore p/ seletor; unidade em consulta |
+| `GET /unidades/{id}` | UNIDADE_LER | |
+| `POST /unidades` · `PUT /unidades/{id}` | UNIDADE_ESCREVER | só subordinadas |
+| `PUT /unidades/minha/dados-institucionais` | INSTITUICAO_ESCREVER | cabeçalho/rodapé/logo |
+| `GET /usuarios?busca&page&size` · `GET /usuarios/{id}` | USUARIO_LER | |
+| `GET /usuarios/cargos-atribuiveis?unidadeId` | USUARIO_ESCREVER | |
+| `POST /usuarios` · `PUT /usuarios/{id}` · `PATCH /usuarios/{id}/situacao` · `PUT /usuarios/{id}/senha` | USUARIO_ESCREVER | |
+| `GET /permissoes` | PERMISSAO_LER | matriz da unidade em consulta |
+| `PUT /permissoes/cargos/{cargoId}` · `DELETE /permissoes/cargos/{cargoId}` | PERMISSAO_ESCREVER | ajustar / restaurar padrão |
+| `POST /arquivos` (multipart `arquivo`,`categoria`) · `GET /arquivos/{id}` · `GET /arquivos/{id}/url` | logado | escopo pela unidade do arquivo |
+| `GET /chat/contatos` · `GET /chat/conversas` · `POST /chat/conversas/com/{usuarioId}` | CHAT_USAR | |
+| `GET /chat/conversas/{id}/mensagens?antesDeId` · `POST /chat/mensagens` · `POST /chat/conversas/{id}/lidas` | CHAT_USAR | |
+| WS `/ws` → `SEND /app/chat.enviar` `{conversaId,texto}` · `/app/chat.lidas` · `SUBSCRIBE /user/queue/chat`, `/user/queue/erros` | CHAT_USAR (no CONNECT) | |
+
+**Tarefas** (leitura TAREFA_LER, alteração TAREFA_ESCREVER): `GET /tarefas?concluidasDesde` · `GET /tarefas/encerradas?limite` · `GET /tarefas/{id}` ·
+`GET /tarefas/{id}/historico` · `GET /tarefas/sugestoes` · `POST /tarefas` · `POST /tarefas/rapida` · `PUT /tarefas/{id}` ·
+`DELETE /tarefas/{id}` · `POST /tarefas/{id}/concluir` · `POST /tarefas/{id}/reabrir` · `PATCH /tarefas/{id}/status` ·
+`PATCH /tarefas/{id}/prioridade` · `PATCH /tarefas/{id}/data` · `POST|PATCH|DELETE /tarefas/{id}/subtarefas[/{sid}]`.
+
+**Agenda** (leitura AGENDA_LER, alteração AGENDA_ESCREVER): `GET /agenda?inicio&fim` (itens de todas as fontes que o usuário lê, até 100 dias) ·
+`GET /agenda/eventos/{id}` (com posição na série, total, última data e "restantes") · `GET /agenda/eventos/{id}/historico` ·
+`POST /agenda/eventos` · `PUT /agenda/eventos/{id}` (`escopo` SO_ESTA|ESTA_E_PROXIMAS numa série; `frequencia`+`repetirAte` num evento solto) ·
+`DELETE /agenda/eventos/{id}?escopo=SO_ESTA|ESTA_E_PROXIMAS|TODAS` (devolve quantas datas saíram) · `POST /agenda/eventos/{id}/concluir` ·
+`POST /agenda/eventos/{id}/reabrir` · `PATCH /agenda/eventos/{id}/data`.
+
+**Atendimentos** (leitura ATENDIMENTO_LER, alteração ATENDIMENTO_ESCREVER; professor/profissional só veem e criam os próprios):
+`GET /atendimentos?inicio&fim` · `GET /atendimentos/{id}` · `GET /atendimentos/{id}/historico` · `POST /atendimentos` (avulso ou semanal) ·
+`POST /atendimentos/lote` (várias linhas de uma vez, incompletas são ignoradas) · `POST /atendimentos/copiar-semana?segunda=` ·
+`PATCH /atendimentos/{id}/presenca` · `POST /atendimentos/{id}/remarcar` · `DELETE /atendimentos/{id}` · `POST /atendimentos/{id}/encerrar-serie` ·
+`GET|PUT|DELETE /atendimentos/alunos[/{id}]` · `POST /atendimentos/alunos/{id}/mesclar` · `POST /atendimentos/alunos/{id}/contato-familia` ·
+`GET /atendimentos/alunos/{id}/historico` (sem período — filtro de data é no front) · os mesmos 4 últimos para `/atendimentos/profissionais`.
+
+**Documentos** (leitura DOCUMENTO_LER, alteração DOCUMENTO_ESCREVER): `GET /documentos` (sem versões) · `GET /documentos/{id}` (com versões) ·
+`GET /documentos/{id}/historico` · `POST /documentos` · `PUT /documentos/{id}` · `POST /documentos/{id}/renovar` · `DELETE /documentos/{id}`.
+
+**Empresas** (leitura EMPRESA_LER, alteração EMPRESA_ESCREVER): `GET /empresas` (cada uma com `documentos`) · `GET /empresas/{id}` ·
+`GET /empresas/{id}/historico` · `POST /empresas` (devolve `{empresa, jaExistia}`) · `PUT /empresas/{id}` · `DELETE /empresas/{id}` ·
+`POST /empresas/{id}/documentos` · `DELETE /empresas/{id}/documentos/{documentoId}` (os dois devolvem a empresa atualizada).
+A consulta de CNPJ (`open.cnpja.com/office/{cnpj}`) é feita direto do navegador, sem passar pelo back.
+
+**Projetos** (leitura PROJETO_LER, alteração PROJETO_ESCREVER; as alterações devolvem o detalhe atualizado):
+`GET /projetos/recursos?arquivados` (com execuções e financeiro) · `GET /projetos/recursos/{id}` · `GET /projetos/recursos/{id}/historico` (recurso + execuções) ·
+`POST|PUT|DELETE /projetos/recursos[/{id}]` · `PATCH /projetos/recursos/{id}/arquivado` · `POST|DELETE /projetos/recursos/{id}/documentos[/{docId}]` ·
+`POST /projetos/recursos/{id}/transferencias` · `POST /projetos/recursos/{id}/execucoes` ·
+`GET /projetos/execucoes` (quadro do Kanban) · `GET|PUT|DELETE /projetos/execucoes/{id}` · `GET /projetos/execucoes/{id}/historico` · `PATCH /projetos/execucoes/{id}/status` ·
+`PUT /projetos/execucoes/{id}/plano` · `POST|DELETE /projetos/execucoes/{id}/empresas[/{vinculoId}]` · `POST /projetos/execucoes/{id}/cotacoes` ·
+`POST /projetos/execucoes/{id}/cotacoes/{cid}/vencedora` · `DELETE /projetos/execucoes/{id}/cotacoes/{cid}` · `POST|DELETE …/ordens`, `…/documentos`, `…/pagamentos`, `…/pendencias` ·
+`PATCH /projetos/execucoes/{id}/pendencias/{pid}` (`{concluida}`) · `GET /projetos/empresas/{empresaId}` (abas da ficha da empresa).
+
+**Gerador** (leitura GERADOR_LER, alteração GERADOR_ESCREVER; modelos do sistema = `unidade_id` nulo, só leitura):
+`GET|POST /gerador/modelos` · `PUT|DELETE /gerador/modelos/{id}` · `POST /gerador/modelos/{id}/duplicar` ·
+`GET|POST /gerador/documentos` (lista sem texto, com respostas) · `GET|PUT|DELETE /gerador/documentos/{id}` (PUT = nova versão) ·
+`GET /gerador/documentos/{id}/historico` · `POST /gerador/documentos/{id}/duplicar` · `POST /gerador/documentos/{id}/anexos` (`{arquivoId}`) · `DELETE …/anexos/{arquivoId}`.
+
+**Relatórios de professores/profissionais** (`/relatorios-profissionais`; enviar = RELATORIO_PROF_ENVIAR, Central = RELATORIO_PROF_LER):
+`GET /meus` · `POST` (`{nome, tipo, nomeAluno, complemento, periodoInicio?, periodoFim?, arquivoId}`) · `POST /{id}/entregar` (atende cobrança) · `POST /central/profissionais/{usuarioId}/cobrar` (RELATORIO_PROF_COBRAR) · `GET /central/profissionais?busca&ano&de&ate&status` ·
+`GET /central/profissionais/{usuarioId}?ano&de&ate&status` · `GET /{id}/url` (autor ou Central; link temporário do PDF).
+
+### Banco — schemas e tabelas (`apae.sql`)
+
+| Schema | Tabelas |
+|---|---|
+| `acesso` | unidade, cargo, permissao, cargo_permissao, unidade_cargo_permissao, usuario, token_renovacao |
+| `sistema` | arquivo, historico, numeracao, vinculo_registro |
+| `chat` | conversa, mensagem |
+| `secretaria` | tarefa, subtarefa |
+| `agenda` | evento_serie, evento |
+| `documentos` | documento, documento_versao |
+| `empresas` | empresa, empresa_documento |
+| `projetos` | recurso, recurso_documento, execucao, movimentacao_recurso, execucao_empresa, cotacao, cotacao_item, ordem_compra, execucao_documento, pagamento, execucao_pendencia |
+| `gerador` | modelo_documento (unidade NULL = modelo do sistema), documento_gerado (JSONB valores/contexto/assinaturas), documento_gerado_versao, documento_gerado_anexo |
+| `atendimentos` | aluno, profissional, atendimento |
+| `relatorios` | relatorio_profissional |
+
+Enums gravados como texto em MAIÚSCULAS (ex.: `EM_ANDAMENTO`); o front traduz para rótulos.
+
+---
+
+## Front — `front/src/`
+
+| Pasta / arquivo | Responsabilidade | Origem |
+|---|---|---|
+| `main.tsx`, `App.tsx` | Redux + Router + tema + `ProvedorInteracao`; liga `sessao.aoMudar` e `iniciarSessao` | template adaptado |
+| `routes/modulos.ts` | **fonte única** de módulos (caminho, título, subtítulo, ícone, grupo, permissão, tela) | novo |
+| `routes/Router.tsx`, `Guardas.tsx` | rotas geradas dos módulos; `RotaAutenticada`, `RotaPublica`, `RotaPermissao` | novo |
+| `utils/axios.ts` | cliente HTTP único; objeto `sessao`; renovação single-flight; `tokenValidoParaWebSocket` | template reescrito |
+| `utils/erroApi.ts` | `ErroApi` (status, mensagem, campos) a partir do ProblemDetail | novo |
+| `utils/validacao.ts` | `regras` Yup (texto, obrigatorio, email, telefone, cpf, cnpj, uf, senha, login, dataPassada) | novo |
+| `utils/formatacao.ts` | datas pt-BR, iniciais, máscaras CPF/CNPJ/telefone, `normalizar` (busca sem acento/maiúscula) | novo |
+| `constantes/limites.ts`, `permissoes.ts` | espelho dos limites do banco e códigos de permissão | novo |
+| `types/*.ts` | tipos dos DTOs do back | novo |
+| `servicos/*.ts` | uma função por rota da API; `chatSocket.ts` (STOMP) | novo |
+| `store/Store.tsx` | `customizer`, `autenticacao`, `chat` | template adaptado |
+| `store/customizer/CustomizerSlice.tsx` | tema claro/escuro e menu recolhido (persistidos) | template adaptado |
+| `store/autenticacao/AutenticacaoSlice.ts` | usuário, árvore de unidades, unidade em consulta | novo |
+| `store/apps/chat/ChatSlice.ts` | conversas, mensagens, eventos em tempo real, envio WS→REST | template reescrito |
+| `hooks/usePermissao.ts` | `tem(p)`, `podeAlterar(p)`, `somenteLeitura` | novo |
+| `hooks/useConsulta.ts` | carregar dados com loading/erro; recarrega ao trocar a unidade | novo |
+| `hooks/useChatTempoReal.ts` | conecta o chat no layout | novo |
+| `components/container/Pagina.tsx` | moldura de toda tela (título, subtítulo, aviso somente leitura) | novo |
+| `components/compartilhados/` | `ProvedorInteracao` (notificar/confirmar), `TabelaResponsiva`, `MenuAcoes`, `AvisoSomenteLeitura` | novo |
+| `components/formularios/` | `CampoFormik` (limite/contador/máscara/seleção), `DialogoFormulario` (tela cheia no celular, erros do back por campo), `CampoArquivoFormik` (upload S3 → id no formulário, nome do arquivo atual, abrir) | novo |
+| `components/apps/chats/` | `ChatPainel`, `ChatSidebar`, `ChatListing`, `ChatContent`, `ChatMsgSent` | template adaptado |
+| `components/shared/`, `forms/theme-elements/`, `custom-scroll/`, `container/PageContainer` | cards, campos, scrollbar | **cópia fiel do template** |
+| `layouts/full/` | `FullLayout`, `vertical/sidebar/*` (menu por permissão), `vertical/header/*` (seletor de unidade, aviso de chat, tema, perfil), `shared/logo` (logo APAE) | template adaptado |
+| `layouts/blank/`, `shared/loadable`, `shared/breadcrumb`, `theme/*`, `views/spinner` | | **cópia fiel do template** (tema: locale pt-BR) |
+| `views/autenticacao/` | `Entrar`, `TrocarSenha`, `LayoutAutenticacao` | template adaptado |
+| `views/painel/Painel.tsx` | saudação + chat (resto do painel no Módulo 7) | novo |
+| `views/administracao/` | `usuarios/`, `unidades/`, `permissoes/`, `instituicao/` | novo |
+| `views/secretaria/Secretaria.tsx`, `components/apps/secretaria/*` | barra rápida, lista agrupada, detalhe, checklist, formulário | novo |
+| `views/kanban/Kanban.tsx`, `components/apps/kanban/*` | colunas por situação, arrastar (react-beautiful-dnd) | estrutura do template |
+| `hooks/useAcoesTarefa.ts`, `utils/tarefas.ts`, `utils/datas.ts`, `types/comum.ts`, `types/tarefas.ts`, `servicos/tarefas.ts` | ações e regras de exibição de tarefas; datas locais; prioridade/frequência | novo |
+| `components/compartilhados/HistoricoDoRegistro.tsx` | "Histórico" no fim de qualquer painel de detalhe | novo |
+| `views/agenda/Agenda.tsx`, `components/apps/agenda/*` | Semana/Mês/Lista, painel do dia/item, formulário com série, diálogos de excluir e mover, arrastar (HTML5), impressão | novo |
+| `types/agenda.ts`, `servicos/agenda.ts`, `utils/agenda.ts` | itens e eventos; período/título/busca/agrupamento da agenda | novo |
+| `hooks/useAvisoAgenda.ts` | aviso 30 min antes dos eventos de hoje (montado no `FullLayout`) | novo |
+| `views/atendimentos/Atendimentos.tsx`, `components/apps/atendimentos/*` | faixa da semana (`FaixaDias`), lista com presença em um clique (`LinhaAtendimento`), painel do atendimento/aluno/profissional, formulário (individual/lote), diálogos de remarcar/justificar falta/gestão de cadastros/lista de presença/relatório | novo |
+| `types/atendimentos.ts`, `servicos/atendimentos.ts`, `utils/atendimentos.ts` | resumo da semana, faltas seguidas (cálculo no front a partir do histórico já carregado), agrupamento por dia | novo |
+| `views/documentos/Documentos.tsx`, `components/apps/documentos/*` | lista agrupada por situação, linha com "Renovar", detalhe com versões e histórico, formulário, diálogo de renovar, atalhos de validade (`?documento=ID`) | novo |
+| `views/empresas/Empresas.tsx`, `components/apps/empresas/*` | lista com situação, ficha com abas (Dados/Documentos/Histórico), formulário com "Buscar dados" do CNPJ, documento da empresa | novo |
+| `views/projetos/Projetos.tsx`, `components/apps/projetos/*` | Lista → Recurso → Execução pela URL (`?recurso=`, `?execucao=&secao=`); seções da execução = checklist; diálogos (cotação com itens, ordem/pagamento com avisos); relatório PDF do recurso | novo |
+| `components/apps/kanban/QuadroExecucoes.tsx` | quadro "Execuções de projeto" do Kanban | novo |
+| `components/compartilhados/Relacionados.tsx`, `types/vinculos.ts`, `servicos/vinculos.ts` | seção "Relacionados" (vincular/abrir/remover) em tarefa, documento, empresa e execução | novo |
+| `views/historico/Historico.tsx`, `views/relatorios/Relatorios.tsx`, `views/pesquisa/Pesquisa.tsx`, `layouts/full/vertical/header/BuscaGeral.tsx` | histórico por dia (`GET /api/historico`), relatório A4 com PDF/impressão, pesquisa geral (campo no cabeçalho) | novo |
+| `views/pendencias/Pendencias.tsx`, `views/painel/Painel.tsx`, `components/apps/pendencias/SecoesPendencias`, `components/apps/painel/BlocosPainel` | Pendências com ação ali mesmo; Painel (para resolver, hoje/7 dias, projetos, 3 números, chat) | novo |
+| `types/painel.ts`, `servicos/painel.ts` (`carregarDadosPainel`), `hooks/useDadosPainel.ts`, `utils/pendencias.ts` (`montarPendencias`, `porCategoria`) | junta tarefas, documentos, agenda, projetos, atendimentos + extras por permissão | novo |
+| `views/gerador/Gerador.tsx`, `components/apps/gerador/*` | abas Documentos/Modelos; prévia A4 ao vivo, vínculos, versões, anexos, PDF/impressão; aceita `?documento=` e `?vinculoTipo=&vinculoId=` | novo |
+| `components/formularios/EditorRico.tsx` | editor de texto rico (contenteditable) reaproveitável | novo |
+| `types/gerador.ts`, `servicos/gerador.ts`, `utils/gerador.ts`, `utils/geradorVinculos.ts` | campos {AUTO}/[MANUAL], `montarHtmlDocumento`, `textoBusca`; listas e dados dos vínculos | novo |
+| `types/projetos.ts`, `servicos/projetos.ts`, `utils/projetos.ts` | `formatarMoeda`, `PROPS_VALOR`, `TOM_STATUS`, `empresasCotadas`, `avisoDocumentosEmpresa` | novo |
+| `types/documentos.ts`, `types/empresas.ts`, `servicos/documentos.ts`, `servicos/empresas.ts`, `utils/documentos.ts` | situação pela validade, texto do prazo, grupos, atalhos de validade, situação da empresa; `consultarCnpj` | novo |
+| `utils/documentoA4.ts`, `utils/impressaoPdf.ts` | folha A4 com cabeçalho e rodapé institucionais (`ESTILO_DOCUMENTO` serve também para prévia na tela) + `imprimir`/`salvarPdf` (`html2pdf.js`, import dinâmico, `paginaXdeY`); usado nos Módulos 3, 5 e 6, reaproveitável pelo 8 | novo |
+| `views/relatoriosProfissionais/{MeusRelatorios,CentralRelatorios}.tsx`, `components/apps/relatoriosProfissionais/*` (`ListaRelatorios` pendentes + ano→mês com abrir/baixar, `DialogoEnviarRelatorio` — novo ou atendendo cobrança —, `DialogoCobrarRelatorio`, `CamposRelatorio`) | Meus Relatórios (`/meus-relatorios`) e Central de Relatórios (`/central-relatorios`) | novo |
+| `types/relatoriosProfissionais.ts`, `servicos/relatoriosProfissionais.ts`, `utils/relatoriosProfissionais.ts` | tipos, chamadas, agrupamento por ano/mês, texto do período | novo |
+| `views/EmConstrucao.tsx`, `views/erro/Erro.tsx` | módulos não migrados; 403/404 | novo / template |
+
+Assets: `assets/images/logos/logo-apae.png` (extraído do base64 do sistema antigo), fundos do template.
