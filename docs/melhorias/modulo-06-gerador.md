@@ -1,10 +1,10 @@
 # Módulo 6 — Gerador de documentos
 
 Fonte no sistema antigo: `old/js/17-gerador-documentos.js` e `old/js/17b-gerador-telas.js`.
-Tabelas: `gerador.*` (já existiam no `apae.sql`; **nenhuma alteração de banco** neste módulo).
+Tabelas: `gerador.*` (já existiam no `projetos-mamore.sql`; **nenhuma alteração de banco** neste módulo).
 
 ## Mantido igual ao antigo
-- Campos `{AUTOMÁTICO}` (NOME_APAE, CNPJ_APAE, ENDERECO_APAE, TELEFONE_APAE, EMAIL_APAE, CIDADE_UF, PRESIDENTE,
+- Campos `{AUTOMÁTICO}` (NOME_EMPRESA, CNPJ_EMPRESA, ENDERECO_EMPRESA, TELEFONE_EMPRESA, EMAIL_EMPRESA, CIDADE_UF, PRESIDENTE,
   CPF_PRESIDENTE, DATA, DATA_CURTA, ANO, NUMERO) e `[MANUAL]`; `{OUTRO}` vira campo "de contexto" no formulário.
   Campo sem valor continua visível como `[CAMPO]` / `{CAMPO}` (amarelo na prévia).
 - Campos longos (TEXTO, PAUTA, DELIBERACOES…) em área de texto; rótulos amigáveis ("DESTINATARIO" → "Destinatário").
@@ -28,7 +28,7 @@ Tabelas: `gerador.*` (já existiam no `apae.sql`; **nenhuma alteração de banco
 | Excluir empresa ligada a documento gerado | bloqueava | continua bloqueando, agora validado no back (`ServicoEmpresa.excluir` → mensagem clara) |
 | Vínculo "projeto" | ligava ao projeto antigo | liga à **execução** de projeto (`EXECUCAO`): preenche NOME_PROJETO, OBJETIVO, PERIODO, VALOR, FONTE_RECURSO, RESPONSAVEL |
 | Vínculos com permissão | — | a lista de cada tipo usa as APIs dos módulos; quem não lê aquele módulo vê "Você não tem acesso a esta lista" |
-| Limites | sem limite | `Limites.java` ↔ `limites.ts` ↔ `apae.sql`: nome do modelo 100, título 150, série 60, texto 100 000, campo 5 000, até 60 campos, 10 assinaturas × 5 linhas × 150 caracteres |
+| Limites | sem limite | `Limites.java` ↔ `limites.ts` ↔ `projetos-mamore.sql`: nome do modelo 100, título 150, série 60, texto 100 000, campo 5 000, até 60 campos, 10 assinaturas × 5 linhas × 150 caracteres |
 | Atenção ao celular | modal | formulário em **tela cheia**, prévia empilhada abaixo dos campos; painel do documento ocupa a tela com "← Documentos" |
 | Prévia/miniatura | HTML solto (CSS global) | `PaginaA4Previa`: folha A4 reduzida à largura disponível, com o CSS isolado (`ESTILO_DOCUMENTO`), sem afetar o resto da tela |
 | Histórico | `registrarHistorico` | `ServicoHistorico` (`GERADOR`): criação, edição (versão N), anexos, exclusão — aparece no painel do documento |

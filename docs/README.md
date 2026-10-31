@@ -1,4 +1,4 @@
-# Documentação — Central da Secretaria APAE
+# Documentação — Projetos Mamoré
 
 Comece por aqui se você é uma pessoa **ou uma IA** assumindo o projeto.
 

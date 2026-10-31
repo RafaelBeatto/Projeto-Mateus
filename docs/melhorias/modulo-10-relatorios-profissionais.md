@@ -20,7 +20,7 @@ Não há editor, geração automática, periodicidade nem fluxo de aprovação/r
 Administrador, Secretário e Tesoureiro **não** entram na Central por padrão; a tela Permissões libera por unidade. `RELATORIO_LER` (relatório de atividades) não foi reaproveitada de propósito.
 Escopo de unidade igual ao resto: a Central lê a unidade consultada (a própria ou subordinada, cabeçalho `X-Unidade`); enviar é só na própria unidade.
 
-## Banco (`apae.sql`, seção 12)
+## Banco (`projetos-mamore.sql`, seção 12)
 Schema `relatorios`, tabela `relatorio_profissional`: `unidade_id`, `usuario_id`, `nome_usuario` e `cargo_nome` (retrato do momento do envio), `nome` (do relatório), `tipo` (`PESSOAL`|`GERAL`), `nome_aluno` (texto livre, só no pessoal), `periodo_inicio`, `periodo_fim`,
 `complemento`, `arquivo_id` → `sistema.arquivo`, `status` (`PENDENTE`|`ENTREGUE`), `solicitado_por_id`/`solicitado_em` (cobrança), `enviado_em` (nulo enquanto Pendente). Checks: pessoal exige `nome_aluno`; fim ≥ início; só `PENDENTE` pode ficar sem arquivo.
 Permissões 25, 26 e 27 + matriz padrão no mesmo script.

@@ -1,0 +1,21 @@
+package br.com.projetosmamore.empresas.dto;
+
+import br.com.projetosmamore.comum.Limites;
+import br.com.projetosmamore.comum.validacao.Cnpj;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+/** Cadastro/edição de contratante: só a razão social é obrigatória (CPF do representante e observação saíram do formulário). */
+public record RequisicaoEmpresa(
+        @NotBlank @Size(max = Limites.EMPRESA_RAZAO_SOCIAL) String razaoSocial,
+        @Size(max = Limites.EMPRESA_NOME_FANTASIA) String nomeFantasia,
+        @Cnpj @Size(max = Limites.CNPJ) String cnpj,
+        @Size(max = Limites.TELEFONE) String telefone,
+        @Email @Size(max = Limites.EMAIL) String email,
+        @Size(max = Limites.EMPRESA_ENDERECO) String endereco,
+        @Size(max = Limites.MUNICIPIO) String municipio,
+        @Pattern(regexp = "^$|^[A-Za-z]{2}$", message = "use a sigla com 2 letras") String uf,
+        @Size(max = Limites.RESPONSAVEL) String representante) {
+}

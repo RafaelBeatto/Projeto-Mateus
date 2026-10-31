@@ -1,6 +1,6 @@
 /**
  * Tamanho máximo de cada campo, espelhando as colunas do banco
- * (back: Limites.java / db/apae.sql). Alterou lá, altere aqui.
+ * (back: Limites.java / db/projetos-mamore.sql). Alterou lá, altere aqui.
  */
 export const LIMITES = {
   // Pessoa / contato

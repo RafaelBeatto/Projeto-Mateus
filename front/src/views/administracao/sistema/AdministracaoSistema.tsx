@@ -19,7 +19,7 @@ const ABAS = [
 ];
 
 /**
- * Área exclusiva do dono do sistema (login em APAE_DONO_LOGINS no back), fora do layout do sistema:
+ * Área exclusiva do dono do sistema (login em PROJETOS_DONO_LOGINS no back), fora do layout do sistema:
  * quem entra com esse login cai direto aqui. O front só esconde; quem barra de verdade é o back (403).
  */
 const AdministracaoSistema = () => {

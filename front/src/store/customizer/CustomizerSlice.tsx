@@ -22,7 +22,7 @@ interface StateType {
   borderRadius: number;
 }
 
-const CHAVE_PREFERENCIAS = 'central-secretaria:preferencias';
+const CHAVE_PREFERENCIAS = 'projetos-mamore:preferencias';
 
 function lerPreferencias(): Partial<Pick<StateType, 'activeMode' | 'isCollapse'>> {
   try {

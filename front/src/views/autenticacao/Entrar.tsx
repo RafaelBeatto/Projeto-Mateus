@@ -18,7 +18,7 @@ const esquema = Yup.object({
 /** O back responde (401 sem login)? Sem ele, o proxy do Vite devolve erro 5xx ou a rede falha. */
 async function backNoAr() {
   try {
-    const resposta = await fetch('/api/autenticacao/eu');
+    const resposta = await fetch(`${import.meta.env.VITE_API_URL ?? '/api'}/autenticacao/eu`);
     return resposta.status === 401 || resposta.status === 403 || resposta.ok;
   } catch {
     return false;
@@ -32,7 +32,7 @@ const Entrar = () => {
   const origem = (useLocation().state as { de?: string } | null)?.de ?? '/';
 
   return (
-    <LayoutAutenticacao titulo="Mamoré Construções" subtitulo="Entre com o usuário e a senha que você recebeu.">
+    <LayoutAutenticacao titulo="Acessar o sistema" subtitulo="Entre com o usuário e a senha que você recebeu.">
       <Formik
         initialValues={{ login: '', senha: '' }}
         validationSchema={esquema}

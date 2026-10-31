@@ -1,59 +1,76 @@
 import { ReactNode } from 'react';
-import { Grid, Box, Typography } from '@mui/material';
+import { Grid, Box, Theme, ThemeProvider, Typography } from '@mui/material';
 import PageContainer from 'src/components/container/PageContainer';
-import imagemFundo from 'src/assets/images/backgrounds/login-bg.svg';
-import Logo from 'src/layouts/full/shared/logo/Logo';
+import logoMamore from 'src/assets/images/logos/logo-mamore.svg';
 
-/** Moldura das telas de entrar e trocar senha (a mesma do Login do template). */
+const VERDE_MAMORE = '#1a6b52';
+
+/** O tema do sistema com o verde da Mamoré como cor principal: vale só dentro desta moldura. */
+const temaMamore = (tema: Theme): Theme => ({
+  ...tema,
+  palette: {
+    ...tema.palette,
+    primary: { ...tema.palette.primary, main: VERDE_MAMORE, dark: '#155a44', light: '#e6f4ee', contrastText: '#fff' },
+  },
+});
+
+/** Moldura das telas de entrar e trocar senha: marca da Mamoré no painel verde + formulário. */
 const LayoutAutenticacao = ({ titulo, subtitulo, children }: { titulo: string; subtitulo: string; children: ReactNode }) => (
-  <PageContainer title={`${titulo} · Mamoré Construções`} description={subtitulo}>
-    <Grid container spacing={0} sx={{ overflowX: 'hidden', minHeight: '100vh' }}>
-      <Grid
-        item
-        xs={12}
-        lg={7}
-        xl={8}
-        sx={{
-          position: 'relative',
-          '&:before': {
-            content: '""',
-            background: 'radial-gradient(#d2f1df, #d3d7fa, #bad8f4)',
-            backgroundSize: '400% 400%',
-            animation: 'gradient 15s ease infinite',
-            position: 'absolute',
-            height: '100%',
-            width: '100%',
-            opacity: '0.3',
-          },
-        }}
-      >
-        <Box position="relative">
-          <Box px={3}>
-            <Logo />
-          </Box>
+  <ThemeProvider theme={temaMamore}>
+    <PageContainer title={`${titulo} · Mamoré Construções`} description={subtitulo}>
+      <Grid container spacing={0} sx={{ overflowX: 'hidden', minHeight: '100vh' }}>
+        <Grid
+          item
+          xs={12}
+          lg={7}
+          xl={8}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          textAlign="center"
+          px={3}
+          py={{ xs: 5, lg: 0 }}
+          bgcolor={VERDE_MAMORE}
+        >
           <Box
-            alignItems="center"
-            justifyContent="center"
-            height="calc(100vh - 75px)"
-            sx={{ display: { xs: 'none', lg: 'flex' } }}
+            component="img"
+            src={logoMamore}
+            alt=""
+            sx={{ width: { xs: 88, lg: 168 }, height: { xs: 88, lg: 168 }, filter: 'brightness(0) invert(1)' }}
+          />
+          <Typography
+            component="div"
+            variant="h2"
+            fontWeight="700"
+            color="#fff"
+            mt={{ xs: 2, lg: 4 }}
+            sx={{ fontSize: { xs: '1.5rem', lg: '2.5rem' } }}
           >
-            <img src={imagemFundo} alt="" style={{ width: '100%', maxWidth: '500px' }} />
+            Mamoré Construções
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            mt={1}
+            sx={{ color: 'rgba(255, 255, 255, 0.75)', letterSpacing: '0.2em', textTransform: 'uppercase' }}
+          >
+            e Meio Ambiente
+          </Typography>
+        </Grid>
+        <Grid item xs={12} lg={5} xl={4} display="flex" justifyContent="center" alignItems="center">
+          <Box p={{ xs: 3, sm: 4 }} width="100%" maxWidth={460}>
+            <Typography fontWeight="700" variant="h3" mb={1}>
+              {titulo}
+            </Typography>
+            <Typography variant="subtitle1" color="textSecondary" mb={1}>
+              {subtitulo}
+            </Typography>
+            {children}
           </Box>
-        </Box>
+        </Grid>
       </Grid>
-      <Grid item xs={12} lg={5} xl={4} display="flex" justifyContent="center" alignItems="center">
-        <Box p={{ xs: 3, sm: 4 }} width="100%" maxWidth={460}>
-          <Typography fontWeight="700" variant="h3" mb={1}>
-            {titulo}
-          </Typography>
-          <Typography variant="subtitle1" color="textSecondary" mb={1}>
-            {subtitulo}
-          </Typography>
-          {children}
-        </Box>
-      </Grid>
-    </Grid>
-  </PageContainer>
+    </PageContainer>
+  </ThemeProvider>
 );
 
 export default LayoutAutenticacao;

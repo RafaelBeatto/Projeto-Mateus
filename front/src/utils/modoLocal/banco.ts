@@ -5,7 +5,7 @@ import omit from 'lodash/omit';
  * "Banco" do modo local: cada tabela é uma lista JSON no localStorage.
  * Os ids são únicos no banco inteiro (um contador só), como as sequências do Postgres.
  */
-const PREFIXO = 'central-secretaria:local:';
+const PREFIXO = 'projetos-mamore:local:';
 
 export interface Registro {
   id: number;

@@ -18,7 +18,7 @@ export const CARGOS: Cargo[] = [
   { id: 6, codigo: 'PRESTADOR_SERVICO', nome: 'Prestador de serviço', nivel: 4 },
 ];
 
-/** Mesmas permissões e descrições do db/apae.sql (só as dos módulos atuais). */
+/** Mesmas permissões e descrições do db/projetos-mamore.sql (só as dos módulos atuais). */
 const PERMISSOES_SISTEMA: { codigo: string; modulo: string; descricao: string }[] = [
   { codigo: 'EMPRESA_LER', modulo: 'EMPRESAS', descricao: 'Ver contratantes' },
   { codigo: 'EMPRESA_ESCREVER', modulo: 'EMPRESAS', descricao: 'Cadastrar e editar contratantes' },
@@ -36,7 +36,7 @@ const PERMISSOES_SISTEMA: { codigo: string; modulo: string; descricao: string }[
 
 const GESTAO = ['GESTAO_PROJETO_LER', 'GESTAO_PROJETO_ESCREVER'];
 const EMPRESAS_HISTORICO = ['EMPRESA_LER', 'EMPRESA_ESCREVER', 'HISTORICO_LER'];
-/** Matriz padrão (db/apae.sql). */
+/** Matriz padrão (db/projetos-mamore.sql). */
 const MATRIZ_PADRAO: Record<string, string[]> = {
   ADMINISTRADOR: [...GESTAO, ...EMPRESAS_HISTORICO, 'USUARIO_LER', 'USUARIO_ESCREVER', 'UNIDADE_LER', 'UNIDADE_ESCREVER', 'PERMISSAO_LER', 'PERMISSAO_ESCREVER', 'INSTITUICAO_ESCREVER'],
   COORDENADOR: [...GESTAO, ...EMPRESAS_HISTORICO, 'USUARIO_LER', 'USUARIO_ESCREVER', 'UNIDADE_LER'],
@@ -93,7 +93,7 @@ const unidadeVazia = (id: number, nome: string, tipo: TipoUnidade, unidadePaiId:
 export function semear() {
   if (valor.ler('_semeado', false)) return;
   valor.gravar('_id', Math.max(valor.ler('_id', 0), 100));
-  valor.gravar('unidades', [unidadeVazia(UNIDADE_LOCAL_ID, 'APAE (modo local)', 'NACIONAL', null)]);
+  valor.gravar('unidades', [unidadeVazia(UNIDADE_LOCAL_ID, 'Projetos Mamoré (modo local)', 'NACIONAL', null)]);
   valor.gravar('usuarios', [
     {
       id: USUARIO_LOCAL_ID,
@@ -213,7 +213,7 @@ export const arquivos = tabela<ArquivoLocal>('arquivos');
 
 function abrirBanco(): Promise<IDBDatabase> {
   return new Promise((resolver, rejeitar) => {
-    const pedido = indexedDB.open('central-secretaria-local', 1);
+    const pedido = indexedDB.open('projetos-mamore-local', 1);
     pedido.onupgradeneeded = () => pedido.result.createObjectStore('arquivos');
     pedido.onsuccess = () => resolver(pedido.result);
     pedido.onerror = () => rejeitar(new ErroLocal(507, 'O navegador não permitiu guardar arquivos no modo local.'));
@@ -313,7 +313,7 @@ post('/unidades', ({ b }) => {
   exigir({ nome: b.nome, unidadePaiId: b.unidadePaiId });
   const pai = unidades.obter(Number(b.unidadePaiId), 'Unidade');
   const tipo = SUBORDINADA[pai.tipo];
-  if (!tipo) throw regra('Uma APAE municipal não tem unidades subordinadas.');
+  if (!tipo) throw regra('Uma unidade municipal não tem unidades subordinadas.');
   const nome = limpo(b.nome)!;
   if (unidades.filtrar((u) => u.unidadePaiId === pai.id && u.nome.toLowerCase() === nome.toLowerCase()).length) {
     throw regra(`Já existe uma unidade com esse nome em ${pai.nome}.`);

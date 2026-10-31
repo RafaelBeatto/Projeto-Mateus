@@ -83,7 +83,7 @@ export const TabelaUnidades = () => {
             <MenuAcoes
               acoes={[
                 {
-                  rotulo: u.tipo === 'NACIONAL' ? 'Nova federação estadual' : 'Nova APAE municipal',
+                  rotulo: u.tipo === 'NACIONAL' ? 'Nova federação estadual' : 'Nova unidade municipal',
                   icone: <IconPlus size={18} />,
                   aoClicar: () => setEdicao({ pai: u, unidade: null }),
                   oculta: u.tipo === 'MUNICIPAL',
@@ -115,7 +115,7 @@ export const TabelaUnidades = () => {
       >
         <Grid container columnSpacing={3}>
           <Grid item xs={12}>
-            <CampoFormik name="nome" rotulo="Nome" obrigatorio limite={LIMITES.UNIDADE_NOME} placeholder="Ex.: APAE de Corumbiara" />
+            <CampoFormik name="nome" rotulo="Nome" obrigatorio limite={LIMITES.UNIDADE_NOME} placeholder="Ex.: Unidade de Corumbiara" />
           </Grid>
           <Grid item xs={4} sm={3}>
             <CampoFormik name="uf" rotulo="UF" limite={LIMITES.UF} inputProps={{ style: { textTransform: 'uppercase' } }} />

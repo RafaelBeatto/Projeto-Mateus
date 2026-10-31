@@ -1,0 +1,5 @@
+package br.com.projetosmamore.empresas.dto;
+
+/** Ao cadastrar, o mesmo CNPJ ou nome já existente reaproveita a empresa em vez de duplicar. */
+public record EmpresaCriada(EmpresaResposta empresa, boolean jaExistia) {
+}

@@ -10,7 +10,7 @@ export const CAMINHO_ADMINISTRACAO = '/admin';
 
 /**
  * Exige login; quem precisa trocar a senha só acessa a tela de troca.
- * O dono do sistema (login em APAE_DONO_LOGINS no back) tem uma área só dele, separada do sistema:
+ * O dono do sistema (login em PROJETOS_DONO_LOGINS no back) tem uma área só dele, separada do sistema:
  * ao entrar vai direto para ela e não abre as telas do sistema; os demais nem sabem que ela existe.
  */
 export function RotaAutenticada({

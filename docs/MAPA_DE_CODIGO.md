@@ -18,11 +18,11 @@ Chat: `@stomp/stompjs` → `/ws` → `ControladorChatWebSocket` → `ServicoChat
 
 ---
 
-## Back — `back/src/main/java/br/org/apae/secretaria/`
+## Back — `back/src/main/java/br/com/projetosmamore/`
 
 | Pacote / arquivo | Responsabilidade |
 |---|---|
-| `CentralSecretariaAplicacao` | `main`; `Locale` pt-BR (mensagens de validação); cache habilitado |
+| `ProjetosMamoreAplicacao` | `main`; `Locale` pt-BR (mensagens de validação); cache habilitado |
 | **configuracao/** | |
 | `PropriedadesAplicacao` | propriedades `aplicacao.*` (jwt, cors, armazenamento, fuso padrão) |
 | `ConfiguracaoSeguranca` | filtro stateless, rotas públicas, JWT HS256 (encoder/decoder), CORS, BCrypt |
@@ -61,17 +61,17 @@ Chat: `@stomp/stompjs` → `/ws` → `ControladorChatWebSocket` → `ServicoChat
 | **agenda/** | `Evento` (regras na entidade), `EventoSerie`, `TipoEvento`, `EscopoSerie`, `ServicoEvento` (CRUD com série), `ServicoAgenda` (itens do período), `ControladorAgenda` |
 | `agenda/fontes/` | `FonteAgenda` (interface: permissão + itens do período), `FonteEventos`, `FonteTarefas`, `FonteDocumentos` (vencimentos), `FonteProjetos` (início/fim de recursos e execuções) |
 | **atendimentos/** | `Aluno`, `Profissional` (cadastros de apoio; `Profissional.usuarioId` liga ao usuário professor/profissional), `Atendimento` (regras na entidade: `marcarPresenca`, `remarcarPara`, `desfazerRemarcacao`, `desligarDoOriginal`; série semanal = `serieId` UUID sem tabela própria), `Presenca`, `MotivoFalta`, `ServicoAtendimento` (CRUD, presença, série, remarcação, cópia da semana), `ServicoCadastroAtendimento` (renomear/mesclar/excluir aluno e profissional, contato família, `meuProfissional` do usuário vinculado), `ControladorAtendimento` |
-| **documentos/** | `Documento` (regra `renovar` na entidade → `DocumentoVersao`), `CategoriaDocumento`, `ExigenciaApae` (documento que vale nos projetos), `ServicoDocumento` (CRUD, renovar, excluir com os arquivos das versões), `ControladorDocumento` |
+| **documentos/** | `Documento` (regra `renovar` na entidade → `DocumentoVersao`), `CategoriaDocumento`, `ExigenciaEmpresa` (documento que vale nos projetos), `ServicoDocumento` (CRUD, renovar, excluir com os arquivos das versões), `ControladorDocumento` |
 | **vinculos/** | `VinculoRegistro`, `TipoRegistro`, `ServicoVinculo`, `ControladorVinculo` (`/api/vinculos`: GET lista, GET /opcoes, POST, DELETE); `dto/Vinculado` |
 | **relatorios/** | `ServicoRelatorio`, `ControladorRelatorio` (`GET /api/relatorios/atividades?de&ate&secoes`, RELATORIO_LER); `dto/RelatorioAtividades` |
 | `relatorios/profissional/` | **Relatórios de professores/profissionais (PDF)**: `RelatorioProfissional`, `StatusRelatorio`, `TipoRelatorio` (PESSOAL/GERAL), `ServicoRelatorioProfissional`, `ControladorRelatorioProfissional` (`/api/relatorios-profissionais`), `dto/` |
 | **pesquisa/** | `ServicoPesquisa` (pontuação sem acento), `ControladorPesquisa` (`GET /api/pesquisa?termo`); `dto/ResultadoPesquisa` |
 | **painel/** | `ServicoPainel`, `ControladorPainel` (`GET /api/painel/extras`: atendimentos sem presença, alunos com faltas seguidas, pendências manuais de execução — vêm de `ServicoAtendimento.semPresenca/alunosComFaltasSeguidas` e `ServicoItensExecucao.pendenciasAbertas`); `dto/ExtrasPainel` |
 | **gerador/** | `ModeloDocumento`, `DocumentoGerado`, `DocumentoGeradoVersao`, `FormatoModelo`, `TipoVinculo`; `SanitizadorHtml` (jsoup); `ServicoModeloDocumento`, `ServicoDocumentoGerado`; `ControladorGerador`; `dto/` |
-| **projetos/** | `Recurso`, `Execucao`, `RecursoDocumento`, `MovimentacaoRecurso`, `ExecucaoEmpresa`, `Cotacao` (+`Cotacao.Item`), `OrdemCompra`, `ExecucaoDocumento`, `Pagamento`, `ExecucaoPendencia`, `Enums`; `CalculoProjetos` (financeiro, checklist, docs da APAE — em lote); `ServicoRecurso`, `ServicoExecucao`, `ServicoItensExecucao`; `ControladorProjeto`; `dto/RequisicoesProjeto`, `dto/RespostasProjeto` |
+| **projetos/** | `Recurso`, `Execucao`, `RecursoDocumento`, `MovimentacaoRecurso`, `ExecucaoEmpresa`, `Cotacao` (+`Cotacao.Item`), `OrdemCompra`, `ExecucaoDocumento`, `Pagamento`, `ExecucaoPendencia`, `Enums`; `CalculoProjetos` (financeiro, checklist, docs da empresa — em lote); `ServicoRecurso`, `ServicoExecucao`, `ServicoItensExecucao`; `ControladorProjeto`; `dto/RequisicoesProjeto`, `dto/RespostasProjeto` |
 | **empresas/** | `Empresa`, `EmpresaDocumento` (arquivo obrigatório), `ServicoEmpresa` (mesmo CNPJ ou razão social = mesma empresa; CNPJ/CPF gravados formatados; lista já com os documentos), `ControladorEmpresa` |
 
-`back/src/main/resources/`: `application.properties` (local) · `db/apae.sql` (schema único + seeds).
+`back/src/main/resources/`: `application.properties` (local) · `db/projetos-mamore.sql` (schema único + seeds).
 
 ### Rotas da API (todas sob `/api`)
 
@@ -137,7 +137,7 @@ A consulta de CNPJ (`open.cnpja.com/office/{cnpj}`) é feita direto do navegador
 `GET /meus` · `POST` (`{nome, tipo, nomeAluno, complemento, periodoInicio?, periodoFim?, arquivoId}`) · `POST /{id}/entregar` (atende cobrança) · `POST /central/profissionais/{usuarioId}/cobrar` (RELATORIO_PROF_COBRAR) · `GET /central/profissionais?busca&ano&de&ate&status` ·
 `GET /central/profissionais/{usuarioId}?ano&de&ate&status` · `GET /{id}/url` (autor ou Central; link temporário do PDF).
 
-### Banco — schemas e tabelas (`apae.sql`)
+### Banco — schemas e tabelas (`projetos-mamore.sql`)
 
 | Schema | Tabelas |
 |---|---|
@@ -164,7 +164,7 @@ Enums gravados como texto em MAIÚSCULAS (ex.: `EM_ANDAMENTO`); o front traduz p
 | `main.tsx`, `App.tsx` | Redux + Router + tema + `ProvedorInteracao`; liga `sessao.aoMudar` e `iniciarSessao` | template adaptado |
 | `routes/modulos.ts` | **fonte única** de módulos (caminho, título, subtítulo, ícone, grupo, permissão, tela) | novo |
 | `routes/Router.tsx`, `Guardas.tsx` | rotas geradas dos módulos; `RotaAutenticada`, `RotaPublica`, `RotaPermissao` | novo |
-| `utils/axios.ts` | cliente HTTP único; objeto `sessao`; renovação single-flight; `tokenValidoParaWebSocket` | template reescrito |
+| `utils/axios.ts` | cliente HTTP único; objeto `sessao`; renovação single-flight | template reescrito |
 | `utils/erroApi.ts` | `ErroApi` (status, mensagem, campos) a partir do ProblemDetail | novo |
 | `utils/validacao.ts` | `regras` Yup (texto, obrigatorio, email, telefone, cpf, cnpj, uf, senha, login, dataPassada) | novo |
 | `utils/formatacao.ts` | datas pt-BR, iniciais, máscaras CPF/CNPJ/telefone, `normalizar` (busca sem acento/maiúscula) | novo |
@@ -183,7 +183,7 @@ Enums gravados como texto em MAIÚSCULAS (ex.: `EM_ANDAMENTO`); o front traduz p
 | `components/formularios/` | `CampoFormik` (limite/contador/máscara/seleção), `DialogoFormulario` (tela cheia no celular, erros do back por campo), `CampoArquivoFormik` (upload S3 → id no formulário, nome do arquivo atual, abrir) | novo |
 | `components/apps/chats/` | `ChatPainel`, `ChatSidebar`, `ChatListing`, `ChatContent`, `ChatMsgSent` | template adaptado |
 | `components/shared/`, `forms/theme-elements/`, `custom-scroll/`, `container/PageContainer` | cards, campos, scrollbar | **cópia fiel do template** |
-| `layouts/full/` | `FullLayout`, `vertical/sidebar/*` (menu por permissão), `vertical/header/*` (seletor de unidade, aviso de chat, tema, perfil), `shared/logo` (logo APAE) | template adaptado |
+| `layouts/full/` | `FullLayout`, `vertical/sidebar/*` (menu por permissão), `vertical/header/*` (seletor de unidade, aviso de chat, tema, perfil), `shared/logo` (logo empresa) | template adaptado |
 | `layouts/blank/`, `shared/loadable`, `shared/breadcrumb`, `theme/*`, `views/spinner` | | **cópia fiel do template** (tema: locale pt-BR) |
 | `views/autenticacao/` | `Entrar`, `TrocarSenha`, `LayoutAutenticacao` | template adaptado |
 | `views/painel/Painel.tsx` | saudação + chat (resto do painel no Módulo 7) | novo |
@@ -215,4 +215,4 @@ Enums gravados como texto em MAIÚSCULAS (ex.: `EM_ANDAMENTO`); o front traduz p
 | `types/relatoriosProfissionais.ts`, `servicos/relatoriosProfissionais.ts`, `utils/relatoriosProfissionais.ts` | tipos, chamadas, agrupamento por ano/mês, texto do período | novo |
 | `views/EmConstrucao.tsx`, `views/erro/Erro.tsx` | módulos não migrados; 403/404 | novo / template |
 
-Assets: `assets/images/logos/logo-apae.png` (extraído do base64 do sistema antigo), fundos do template.
+Assets: `assets/images/logos/logo-mamore.svg` (extraído do base64 do sistema antigo), fundos do template.

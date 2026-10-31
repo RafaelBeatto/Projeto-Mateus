@@ -50,9 +50,9 @@ export function semearFicticios() {
       cnpj: '12.345.678/0001-90',
       endereco: 'Rua das Flores, 120 — Centro',
       telefone: '(11) 3456-7890',
-      email: 'contato@apae-exemplo.org.br',
+      email: 'contato@mamore-exemplo.com.br',
       cidadeUf: 'São Paulo/SP',
-      site: 'www.apae-exemplo.org.br',
+      site: 'www.mamore-exemplo.com.br',
       presidente: 'Helena Martins',
       cpfPresidente: '123.456.789-00',
     });

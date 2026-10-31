@@ -58,8 +58,8 @@ Diálogos de formulário ocupam a tela inteira no celular; listas viram cartões
 
 ## 3. Fluxos principais
 
-1. **Primeiro acesso:** `admin`/`Apae@2026` → troca de senha obrigatória → painel.
-2. **Montar a federação:** Unidades → ⋮ na Nacional → "Nova federação estadual" → ⋮ na estadual → "Nova APAE municipal".
+1. **Primeiro acesso:** `usuario`/`Mamore@2026` → troca de senha obrigatória → painel.
+2. **Montar a federação:** Unidades → ⋮ na Nacional → "Nova federação estadual" → ⋮ na estadual → "Nova unidade municipal".
 3. **Cadastrar pessoa:** Usuários → Novo usuário → escolher Unidade (os cargos oferecidos mudam conforme a unidade)
    → informar senha provisória e repassar à pessoa → ela troca no primeiro acesso.
 4. **Ajustar permissões da unidade:** Permissões → aba do cargo → marcar/desmarcar (marcar "Criar/editar" marca "Ver")
@@ -142,7 +142,7 @@ Diálogos de formulário ocupam a tela inteira no celular; listas viram cartões
 
 ### 4.5 Documentos (`old/js/06-documentos.js`) · `documentos.*`
 - Campos: nome*, categoria (Certidão, Ofício, Ata, Contrato, Relatório, Declaração, Comprovante, Documento financeiro,
-  Documento institucional, Convênio, Outros), "vale como documento da APAE nos projetos" (CNPJ, Estatuto, Ata de
+  Documento institucional, Convênio, Outros), "vale como documento da empresa nos projetos" (CNPJ, Estatuto, Ata de
   eleição/posse, Certidão federal, Certidão estadual, Certidão municipal, FGTS, CNDT), órgão emissor, número,
   responsável, emissão, validade (vazio = não vence; atalhos +30d/+90d/+6m/+1a), arquivo, onde está guardado, tags,
   para que serve, observações. Validade ≥ emissão.
@@ -179,7 +179,7 @@ Diálogos de formulário ocupam a tela inteira no celular; listas viram cartões
   excluir execução devolve o valor). **Transferir saldo** entre execuções (origem ≠ destino, ≤ saldo, motivo*).
 - **Seções da execução = checklist:** Plano de aplicação (descrição* + arquivo), Empresas e compras (cotações de
   **≥3 empresas** para escolher a **vencedora**; ordem de compra só para a vencedora — número*, data, valor, status
-  Rascunho/Emitida/Recebida/Cancelada, arquivo*; aviso se documentos da empresa vencidos na data), Documentação da APAE
+  Rascunho/Emitida/Recebida/Cancelada, arquivo*; aviso se documentos da empresa vencidos na data), Documentação da empresa
   (lê os documentos com exigência em Documentos), Notas e documentos (Nota fiscal, Comprovante, Relatório, Declaração,
   Outro; nota fiscal conclui a etapa), Pagamentos (fornecedor, data, valor*, forma, comprovante*; aviso se passar do
   saldo ou docs da empresa vencidos), Pendências (título*, prioridade, detalhes; concluir/reabrir).
@@ -191,7 +191,7 @@ Diálogos de formulário ocupam a tela inteira no celular; listas viram cartões
   pago, disponível), cartão por recurso com execuções, filtros busca/status/arquivados. Navegação Lista → Recurso → Execução.
 
 ### 4.8 Gerador de documentos (`old/js/17-gerador-documentos.js`, `17b-gerador-telas.js`) · `gerador.*`
-- Modelos com **{CAMPO}** automático (NOME_APAE, CNPJ_APAE, ENDERECO_APAE, TELEFONE_APAE, EMAIL_APAE, CIDADE_UF,
+- Modelos com **{CAMPO}** automático (NOME_EMPRESA, CNPJ_EMPRESA, ENDERECO_EMPRESA, TELEFONE_EMPRESA, EMAIL_EMPRESA, CIDADE_UF,
   PRESIDENTE, CPF_PRESIDENTE, DATA (cidade + data por extenso), DATA_CURTA, ANO, NUMERO) e **[CAMPO]** preenchido
   no formulário. Campos longos (TEXTO, PAUTA, DELIBERACOES, CLAUSULAS, JUSTIFICATIVA, OBJETIVO, ATIVIDADES,
   RESULTADOS, CONSIDERACOES, PRESENTES, OBJETO) viram área de texto.

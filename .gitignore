@@ -15,5 +15,5 @@ Thumbs.db
 # Logs
 *.log
 
-# Variáveis da AWS preenchidas (modelo: deploy/aws/apae-aws.env.exemplo)
+# Variáveis da AWS preenchidas (modelo: deploy/aws/projetos-mamore-aws.env.exemplo)
 deploy/aws/*.env

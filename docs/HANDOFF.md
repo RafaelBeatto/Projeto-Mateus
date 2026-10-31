@@ -1,4 +1,4 @@
-# HANDOFF — continuar a migração da Central da Secretaria
+# HANDOFF — continuar a migração da Projetos Mamoré
 
 > Atualizado em: 2026-10-02 · Concluído: **Base + Módulos 1 a 9 — toda a lista aprovada + Módulo 10 (Relatórios de professores/profissionais)** (Secretaria + Kanban, Agenda, Atendimentos, Documentos + Empresas, Projetos, Gerador, Pendências + Painel, Histórico + Relatórios + Pesquisa, Vínculos) · Próximo: **revisão do dono no navegador + pendências da seção 8** (nenhum módulo novo planejado)
 >
@@ -8,11 +8,11 @@
 
 ## 1. O que é o projeto
 
-Migração do sistema "Central da Secretaria" das APAEs:
+Migração do sistema "Projetos Mamoré" das unidades:
 
 - **De:** `old/` — HTML + 20 módulos JS (~700 KB) + localStorage/IndexedDB, rodando só no navegador.
 - **Para:** `back/` (API Java 21 + Spring Boot 4.0.7, jar Maven) + `front/` (React 18 + TypeScript + MUI,
-  estrutura copiada do template `basefront/main`) + PostgreSQL local `apae` + arquivos na AWS S3.
+  estrutura copiada do template `basefront/main`) + PostgreSQL local `projetos_mamore` + arquivos na AWS S3.
 
 ## 2. Regras do dono do projeto (obrigatórias)
 
@@ -22,11 +22,11 @@ Migração do sistema "Central da Secretaria" das APAEs:
 3. **Não modificar `old/` nem `basefront/`** (só leitura). `old/` é a especificação funcional; `basefront/` é o
    template visual de onde se copiam componentes.
 4. Front e back **com validações** e **respeitando o tamanho das colunas** do banco
-   (`Limites.java` ↔ `front/src/constantes/limites.ts` ↔ `apae.sql`).
+   (`Limites.java` ↔ `front/src/constantes/limites.ts` ↔ `projetos-mamore.sql`).
 5. **Nada de base64 no banco.** Arquivo vai para o S3; no banco só a referência (`sistema.arquivo`).
 6. **Reaproveitar código**, sem redundância (existem utilitários/componentes prontos — ver MAPA_DE_CODIGO).
 7. Boas práticas "Java sênior" e responsividade web/mobile.
-8. SQL em **arquivo único e em ordem** (`back/src/main/resources/db/apae.sql`), tabelas **separadas por schema** (nada no `public`).
+8. SQL em **arquivo único e em ordem** (`back/src/main/resources/db/projetos-mamore.sql`), tabelas **separadas por schema** (nada no `public`).
 9. Entrega **módulo a módulo**, com revisão do dono entre eles. Ele pediu para **não gastar tempo com testes
    automatizados** agora (priorizar funcionalidade); compile e faça build sempre.
 10. Commits só quando ele pedir.
@@ -36,7 +36,7 @@ Migração do sistema "Central da Secretaria" das APAEs:
 | Tema | Decisão |
 |---|---|
 | Linguagem do front | TypeScript |
-| Banco | PostgreSQL local `apae` (usuário/senha locais `postgres/postgres`), `application.properties`; o `-prod` fica para depois |
+| Banco | PostgreSQL local `projetos_mamore` (usuário/senha locais `postgres/postgres`), `application.properties`; na AWS, `application-aws.properties` |
 | Hierarquia | Unidades em árvore **NACIONAL → ESTADUAL → MUNICIPAL** (tabela `acesso.unidade`, caminho materializado `/1/4/17/`) |
 | Acesso | **Cargo + unidade** (não roles compostas). Cargos por nível: administrador_sistema(0) > presidente(1) > diretor(2) > administrador(3) > secretário(4) > tesoureiro(5) > professor = profissional(6) |
 | Criar usuário | Só cargo **abaixo do seu** na própria unidade, ou **qualquer cargo** (exceto admin do sistema) em unidades subordinadas |
@@ -53,9 +53,9 @@ Migração do sistema "Central da Secretaria" das APAEs:
 ## 4. Estado atual
 
 ### Pronto (Fase 1 — base)
-- **Banco:** `apae.sql` com **todas** as tabelas de todos os módulos (39 tabelas, 10 schemas) + seeds
-  (cargos, 24 permissões, matriz padrão, unidade Nacional, usuário `admin`/`Apae@2026` com troca obrigatória,
-  12 modelos prontos do Gerador). Já executado no banco local `apae`.
+- **Banco:** `projetos-mamore.sql` com **todas** as tabelas de todos os módulos (39 tabelas, 10 schemas) + seeds
+  (cargos, 24 permissões, matriz padrão, unidade Nacional, usuários `administrador01` e `usuario`/`Mamore@2026`, este com troca obrigatória,
+  12 modelos prontos do Gerador). Já executado no banco local.
 - **Back:** autenticação, unidades, usuários, matriz de permissões, arquivos S3, histórico (serviço),
   numeração por unidade, chat REST + WebSocket. Compila, empacota o jar e sobe validando o schema.
 - **Front:** login, troca de senha, layout (sidebar/header do template), menu e rotas gerados de
@@ -139,7 +139,7 @@ Migração do sistema "Central da Secretaria" das APAEs:
 ### Pronto (Módulo 4 — Documentos + Empresas)
 - Back `documentos/`: `Documento` (regra `renovar` na entidade: guarda número/emissão/validade/arquivo atuais numa
   `DocumentoVersao` e assume os novos — o arquivo só continua se vier um novo, igual ao antigo), `CategoriaDocumento`,
-  `ExigenciaApae` ("vale como documento da APAE nos projetos" — o Módulo 5 lê por aqui), `ServicoDocumento` (CRUD, renovar,
+  `ExigenciaEmpresa` ("vale como documento da empresa nos projetos" — o Módulo 5 lê por aqui), `ServicoDocumento` (CRUD, renovar,
   excluir apagando os arquivos das versões; trocar o arquivo na edição apaga o anterior), `ControladorDocumento`.
   Situação (vencido/vencendo ≤30 dias/válido/sem validade) é calculada **no front**, como no antigo.
 - Back `empresas/`: `Empresa`, `EmpresaDocumento` (arquivo obrigatório, categoria `DOCUMENTO_EMPRESA`), `ServicoEmpresa`,
@@ -186,7 +186,7 @@ Migração do sistema "Central da Secretaria" das APAEs:
   `comum/entidade/EntidadeCriada` (só `criado_em`).
 - **`CalculoProjetos`** é a fonte única dos números e do checklist (iguais ao antigo): financeiro do recurso (recebido /
   distribuído / pago / não distribuído / saldo das execuções / disponível; canceladas não contam), livre para distribuir,
-  situação da execução (planejado/pago/saldo, 7 etapas, próximo passo), documentação da APAE (por exigência, o documento de
+  situação da execução (planejado/pago/saldo, 7 etapas, próximo passo), documentação da empresa (por exigência, o documento de
   validade mais longa; sem validade = válido) e empresas com documentação OK. Carrega **em lote** (uma consulta por tabela
   para todas as execuções), então a lista não faz N consultas.
 - `ServicoRecurso` (CRUD, arquivar/reabrir, documentos, transferência ≤ saldo da origem, histórico do recurso + execuções),
@@ -207,7 +207,7 @@ Migração do sistema "Central da Secretaria" das APAEs:
   "voltar" do navegador funciona e Agenda/Kanban/Empresas abrem direto o registro. `components/apps/projetos/*`:
   `ListaRecursos` (totais + cartão por recurso com medidor e execuções), `TelaRecurso` (financeiro, abas Execuções/Documentos/
   Histórico com movimentações, dados ao lado, relatório PDF, transferir, arquivar), `TelaExecucao` (navegação que É o checklist:
-  ✓ ou número da etapa; no celular vira abas), `SecoesExecucao` (Resumo, Plano, Empresas e compras, Documentação da APAE,
+  ✓ ou número da etapa; no celular vira abas), `SecoesExecucao` (Resumo, Plano, Empresas e compras, Documentação da empresa,
   Notas e documentos, Pagamentos, Pendências), `FormulariosProjeto`, `DialogosProjeto` (documento do recurso, transferência,
   plano, ligar empresa, cotação com itens e total automático, ordem e pagamento com **aviso de documentos da empresa vencidos
   na data** e de pagamento acima do saldo — confirmados como no antigo), `Comuns` (chip de status, medidor, números, linha de
@@ -215,8 +215,8 @@ Migração do sistema "Central da Secretaria" das APAEs:
 - Kanban: quadro "Execuções de projeto" (`components/apps/kanban/QuadroExecucoes`), escolhido no topo para quem tem
   PROJETO_LER; mover para Concluído com etapas pendentes pede confirmação listando as etapas.
 - Empresas: ficha com abas **Cotações, Ordens de compra e Projetos** e "Ligar a um projeto"; aceita `?empresa=ID`.
-- Documentos: aceita `?exigencia=CNPJ` (abre o cadastro já marcado — vindo de "Cadastrar" na Documentação da APAE); "Renovar"
-  da Documentação da APAE abre o mesmo `DialogoRenovarDocumento` dentro do projeto.
+- Documentos: aceita `?exigencia=CNPJ` (abre o cadastro já marcado — vindo de "Cadastrar" na Documentação da empresa); "Renovar"
+  da Documentação da empresa abre o mesmo `DialogoRenovarDocumento` dentro do projeto.
 - Comuns novos no front: `regras.valor(minimo)` (reais com 2 casas) em `utils/validacao.ts`; `formatarMoeda`, `PROPS_VALOR`,
   `TOM_STATUS`, `avisoDocumentosEmpresa` em `utils/projetos.ts`; `escapeHtml` exportado de `utils/documentoA4.ts`.
 - Removido conforme decisão: pasta .zip da prestação e "classificar projeto antigo" (banco começa do zero).
@@ -282,14 +282,14 @@ Migração do sistema "Central da Secretaria" das APAEs:
 
 ### Pronto (Módulo 10 — Relatórios de professores/profissionais)
 - Detalhe em **[melhorias/modulo-10-relatorios-profissionais.md](melhorias/modulo-10-relatorios-profissionais.md)**.
-- Banco: schema `relatorios`, tabela `relatorio_profissional` (seção 12 do `apae.sql`) + permissões `RELATORIO_PROF_ENVIAR` (Professor/Profissional) e `RELATORIO_PROF_LER` (Presidente/Diretor).
-  Quem já tem o banco criado precisa aplicar só esse trecho (schema, tabela, 2 permissões e as linhas da matriz padrão) — já feito no `apae` local do dono.
+- Banco: schema `relatorios`, tabela `relatorio_profissional` (seção 12 do `projetos-mamore.sql`) + permissões `RELATORIO_PROF_ENVIAR` (Professor/Profissional) e `RELATORIO_PROF_LER` (Presidente/Diretor).
+  Quem já tem o banco criado precisa aplicar só esse trecho (schema, tabela, 2 permissões e as linhas da matriz padrão) — já feito local do dono.
 - Back `relatorios/profissional/` (`/api/relatorios-profissionais`): meus, enviar, Central (profissionais com total + relatórios de um profissional, filtros ano/período/status/busca), `/{id}/url`.
 - **Arquivo restrito**: `CategoriaArquivo.RELATORIO_PROFISSIONAL.restrita()` → as rotas genéricas de `/api/arquivos` dão 404 e só esse módulo abre o PDF (`ServicoArquivo.urlTemporariaAutorizada`),
   para ninguém abrir o relatório alheio trocando o id. Reaproveitável para outro anexo sigiloso.
 - Front: `/meus-relatorios` (Dia a dia) e `/central-relatorios` (Consultar); `CampoArquivoFormik` ganhou `aceita` e `restrito`.
-- Envio pede **nome do relatório** e **tipo** (Pessoal sugerido → pede nome do aluno; Geral). Colunas `nome`, `tipo`, `nome_aluno` na tabela (já aplicadas no `apae` local; relatórios anteriores viraram nome "Relatório", tipo Geral).
-- **Período opcional** (sem "de" = hoje) e **complemento** opcional. **Cobrar** (Central, permissão nova `RELATORIO_PROF_COBRAR`, Presidente/Diretor): cria relatório `PENDENTE` (sem arquivo) que o profissional atende em Meus Relatórios (`POST /{id}/entregar`). Tabela ganhou `complemento`, `solicitado_por_id`, `solicitado_em` e `enviado_em` nulável (migração já aplicada no `apae` local).
+- Envio pede **nome do relatório** e **tipo** (Pessoal sugerido → pede nome do aluno; Geral). Colunas `nome`, `tipo`, `nome_aluno` na tabela (já aplicadas no `projetos_mamore` local; relatórios anteriores viraram nome "Relatório", tipo Geral).
+- **Período opcional** (sem "de" = hoje) e **complemento** opcional. **Cobrar** (Central, permissão nova `RELATORIO_PROF_COBRAR`, Presidente/Diretor): cria relatório `PENDENTE` (sem arquivo) que o profissional atende em Meus Relatórios (`POST /{id}/entregar`). Tabela ganhou `complemento`, `solicitado_por_id`, `solicitado_em` e `enviado_em` nulável (migração já aplicada no `projetos_mamore` local).
 - Pendências do módulo: sem periodicidade/cobrança automática, sem aviso/selo ao cobrado, sem cancelar cobrança nem excluir/editar relatório enviado, telas não testadas no navegador.
 - Verificado: back testado por curl (ver o arquivo de melhorias); front passa em `tsc`, `eslint` e `vite build`.
 
@@ -311,35 +311,28 @@ Migração do sistema "Central da Secretaria" das APAEs:
 ## 5. Como rodar
 
 ```bash
-# Banco (já feito na máquina do dono): psql -U postgres -d apae -f back/src/main/resources/db/apae.sql
+# Banco (já feito na máquina do dono): psql -U postgres -d projetos_mamore -f back/src/main/resources/db/projetos-mamore.sql
 cd back && mvnw.cmd spring-boot:run            # porta 8080 (Windows: mvnw.cmd; Linux: ./mvnw)
-cd front && npm install && npm run dev         # porta 5173, proxy /api e /ws → 8080
+cd front && npm install && npm run dev         # porta 5173, proxy /api → 8080
 ```
-Primeiro acesso: `admin` / `Apae@2026`. Para criar uma APAE municipal: Administração → Unidades → ⋮ na Nacional →
-"Nova federação estadual"; depois ⋮ na estadual → "Nova APAE municipal". Em Usuários, a unidade aparece no campo "Unidade".
+Primeiro acesso: `administrador01` (página `/admin`, senha fixa fora do repositório) e `usuario` (telas do sistema, senha provisória `Mamore@2026`). Para criar uma unidade municipal: Administração → Unidades → ⋮ na Nacional →
+"Nova federação estadual"; depois ⋮ na estadual → "Nova unidade municipal". Em Usuários, a unidade aparece no campo "Unidade".
 
-Recriar o banco do zero (apaga tudo!): `psql -U postgres -c "DROP DATABASE apae"` + criar + rodar o script.
-Para testes sem sujar o `apae`, crie um banco descartável e rode o jar com
+Recriar o banco do zero (apaga tudo!): `psql -U postgres -c "DROP DATABASE projetos_mamore"` + criar + rodar o script.
+Para testes sem sujar o `projetos_mamore`, crie um banco descartável e rode o jar com
 `--spring.datasource.url=jdbc:postgresql://localhost:5432/<banco> --server.port=8081`.
 
 Chaves da AWS no Windows: `back/.env` (não versionado; modelo em `back/.env.exemplo`), importado pelo
 `application.properties`. **Nunca** colocar chave em `properties`: o jar não pode levar segredo.
 
-### Produção (BrasilCloud, 177.131.140.222) — publicado em 2026-09-30
-- Acesso provisório: `http://177.131.140.222:8090` (nginx) → back em `127.0.0.1:8082`, perfil `prod`
-  (`application-prod.properties`). Depois do DNS: `apae.chorobura.com.br` + certbot e fechar a 8090.
-- Arquivos em `deploy/`: `instalar.sh` (idempotente), `apae-backend.service` (`-Xmx384m`, `MemoryMax=600M`),
-  `nginx-apae.conf`. Front em `/opt/apae/front`, jar em `/opt/apae/back`, segredos em `/etc/apae/apae.env` (600):
-  senha do banco e JWT gerados no servidor; `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` preenchidos pelo dono.
-- Banco `apae` com usuário `apae` próprio (PostgreSQL 16 — nada de `uuidv7()`).
-- No servidor rodam também System Car (8080), GT06 (8081/5001) e sites do nginx: não mexer. Publicar de novo =
-  gerar jar/`front/dist`, enviar para `/tmp/apae-deploy` e rodar `instalar.sh` (ele reinicia o serviço).
-- Pastas no S3 (bucket `apae-chorobura`): `UF/municipio/logo/` e `UF/municipio/documentos/<categoria>/`
+### Produção (AWS)
+Passo a passo em `deploy/aws/README.md` (RDS `projetos_mamore`, S3, ALB, variáveis `PROJETOS_*`).
+- Pastas no S3 (bucket `projetos-mamore`): `UF/municipio/logo/` e `UF/municipio/documentos/<categoria>/`
   (federações: `UF/federacao-estadual/`, `nacional/`). A pasta de cada categoria está em `CategoriaArquivo`.
 
 ## 6. Como implementar um módulo (receita)
 
-Back (pacote `br.org.apae.secretaria.<modulo>`):
+Back (pacote `br.com.projetosmamore.<modulo>`):
 1. Limites novos em `comum/Limites.java` (e espelhar em `front/src/constantes/limites.ts`).
 2. Entidade com `@Table(name=..., schema=...)`, estende `EntidadeAuditavel` (se a tabela tem `criado_em` e `atualizado_em`)
    ou `EntidadeBase`. `unidade_id` como `Long unidadeId`. Regras de negócio **na entidade** quando possível.
@@ -411,7 +404,7 @@ Front:
 
 ## 8. Pendências conhecidas (fora dos módulos)
 - Relatórios de professores/profissionais (Módulo 10): decidir se haverá periodicidade/pendência, exclusão de envio errado e se Administrador/Secretário/Tesoureiro entram na Central (hoje só pela tela Permissões).
-- Upload real para o S3 não testado (bucket `apae-chorobura` criado; falta o dono preencher as chaves no servidor).
+- Upload real para o S3 não testado (bucket `projetos-mamore` criado; falta o dono preencher as chaves no servidor).
 - **PENDENTE — armazenamento local provisório (2026-10-02):** sem `back/.env` (sem chaves da AWS) o envio de arquivos falhava com erro 500. Para destravar o desenvolvimento,
   `sistema/arquivo/ArmazenamentoLocal` + `ControladorArquivoLocal` guardam os arquivos em `back/arquivos-locais/` (não versionada) e abrem por link assinado
   (`/api/arquivos-locais/{token}`, expira como o do S3) **só quando não há `AWS_ACCESS_KEY_ID` e `aplicacao.armazenamento.pasta-local` está preenchida** (dev). Produção

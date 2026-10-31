@@ -9,7 +9,7 @@ import { adaptadorLocal, ehTokenLocal } from './modoLocal';
  * - Em 401, renova o token uma única vez (mesmo com várias chamadas simultâneas) e repete a chamada.
  * - Converte qualquer erro em ErroApi.
  */
-const CHAVE_SESSAO = 'central-secretaria:sessao';
+const CHAVE_SESSAO = 'projetos-mamore:sessao';
 
 interface Tokens {
   tokenAcesso: string;
@@ -105,16 +105,5 @@ api.interceptors.response.use(
     }
   },
 );
-
-/** Renova o token antes de abrir o WebSocket (que não passa pelos interceptadores). */
-export async function tokenValidoParaWebSocket(): Promise<string | null> {
-  if (sessao.local()) return null;
-  try {
-    await api.get('/autenticacao/eu');
-  } catch {
-    return null;
-  }
-  return sessao.tokenAcesso();
-}
 
 export default api;
