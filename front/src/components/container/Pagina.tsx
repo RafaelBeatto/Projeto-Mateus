@@ -10,10 +10,10 @@ import { moduloPorCaminho } from 'src/routes/modulos';
 const Pagina = ({ children }: { children: ReactNode }) => {
   const { pathname } = useLocation();
   const modulo = moduloPorCaminho(pathname);
-  const titulo = modulo?.titulo ?? 'Central da Secretaria';
+  const titulo = modulo?.titulo ?? 'Mamoré Construções';
 
   return (
-    <PageContainer title={`${titulo} · Central da Secretaria`} description={modulo?.subtitulo}>
+    <PageContainer title={`${titulo} · Mamoré Construções`} description={modulo?.subtitulo}>
       <AvisoSomenteLeitura />
       <>{children}</>
     </PageContainer>

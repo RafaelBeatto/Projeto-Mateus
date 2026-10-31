@@ -32,7 +32,7 @@ const Entrar = () => {
   const origem = (useLocation().state as { de?: string } | null)?.de ?? '/';
 
   return (
-    <LayoutAutenticacao titulo="Central da Secretaria" subtitulo="Entre com o usuário e a senha que você recebeu.">
+    <LayoutAutenticacao titulo="Mamoré Construções" subtitulo="Entre com o usuário e a senha que você recebeu.">
       <Formik
         initialValues={{ login: '', senha: '' }}
         validationSchema={esquema}

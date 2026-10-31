@@ -34,7 +34,7 @@ const AdministracaoSistema = () => {
   }, [dispatch]);
 
   return (
-    <PageContainer title="Administração do sistema · Central da Secretaria">
+    <PageContainer title="Administração do sistema · Mamoré Construções">
       <AppBar position="sticky" color="default" elevation={0} sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ gap: 1.5 }}>
           <IconShieldLock size={24} />

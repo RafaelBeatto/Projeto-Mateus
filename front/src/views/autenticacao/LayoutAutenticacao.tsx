@@ -6,7 +6,7 @@ import Logo from 'src/layouts/full/shared/logo/Logo';
 
 /** Moldura das telas de entrar e trocar senha (a mesma do Login do template). */
 const LayoutAutenticacao = ({ titulo, subtitulo, children }: { titulo: string; subtitulo: string; children: ReactNode }) => (
-  <PageContainer title={`${titulo} · Central da Secretaria`} description={subtitulo}>
+  <PageContainer title={`${titulo} · Mamoré Construções`} description={subtitulo}>
     <Grid container spacing={0} sx={{ overflowX: 'hidden', minHeight: '100vh' }}>
       <Grid
         item

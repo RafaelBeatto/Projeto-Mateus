@@ -2,9 +2,9 @@ import { FC } from 'react';
 import { Link } from 'react-router-dom';
 import { Box, styled, Typography } from '@mui/material';
 import { useSelector } from 'src/store/Store';
-import logoApae from 'src/assets/images/logos/logo-apae.png';
+import logoMamore from 'src/assets/images/logos/logo-mamore.svg';
 
-/** Logo da APAE + nome do sistema (só o logo com o menu recolhido). */
+/** Logo da Mamoré + nome do sistema (só o logo com o menu recolhido). */
 const Logo: FC = () => {
   const customizer = useSelector((state) => state.customizer);
   const recolhido = customizer.isCollapse && !customizer.isSidebarHover;
@@ -20,10 +20,10 @@ const Logo: FC = () => {
 
   return (
     <LinkStyled to="/">
-      <Box component="img" src={logoApae} alt="APAE" sx={{ width: 40, height: 40, objectFit: 'contain' }} />
+      <Box component="img" src={logoMamore} alt="Mamoré" sx={{ width: 40, height: 40, objectFit: 'contain' }} />
       {recolhido ? null : (
         <Typography variant="h6" color="textPrimary" noWrap>
-          Central da Secretaria
+          Mamoré Construções
         </Typography>
       )}
     </LinkStyled>
